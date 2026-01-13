@@ -42,8 +42,12 @@ class SendspinTimeFilter {
   ///                        When residual > adaptive_cutoff * max_error, forgetting is applied.
   /// @param min_samples Minimum number of samples before adaptive forgetting is enabled. Default 100.
   ///                    Building sufficient history before enabling forgetting improves stability.
+  /// @param drift_significance_threshold SNR threshold for applying drift compensation in time conversions. Default 2.0.
+  ///                                     Drift is only used when drift² > threshold² * drift_covariance, ensuring
+  ///                                     the drift estimate is statistically significant before applying corrections.
   SendspinTimeFilter(double process_std_dev, double drift_process_std_dev, double forget_factor,
-                     double adaptive_cutoff = 0.75, uint8_t min_samples = 100);
+                     double adaptive_cutoff = 0.75, uint8_t min_samples = 100,
+                     double drift_significance_threshold = 2.0);
 
   /// @brief Processes a new time synchronization measurement through the Kalman filter.
   ///
@@ -113,6 +117,7 @@ class SendspinTimeFilter {
   const double forget_variance_factor_;
   const double adaptive_forgetting_cutoff_;
   const uint8_t min_samples_for_forgetting_;
+  const double drift_significance_threshold_squared_;
 
   mutable std::mutex state_mutex_;
 };
