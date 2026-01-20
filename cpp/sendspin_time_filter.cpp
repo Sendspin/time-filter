@@ -122,6 +122,11 @@ void SendspinTimeFilter::update(int64_t measurement, int64_t max_error, int64_t 
   this->drift_covariance_ = new_drift_covariance - drift_gain * new_offset_drift_covariance;
   this->offset_drift_covariance_ = new_offset_drift_covariance - drift_gain * new_offset_covariance;
   this->offset_covariance_ = new_offset_covariance - offset_gain * new_offset_covariance;
+
+  // Update drift significance flag for time conversion methods
+  // Only apply drift compensation if statistically significant (SNR check)
+  const double drift_squared = this->drift_ * this->drift_;
+  this->use_drift_ = drift_squared > this->drift_significance_threshold_squared_ * this->drift_covariance_;
 }
 
 int64_t SendspinTimeFilter::compute_server_time(int64_t client_time) const {
@@ -131,12 +136,7 @@ int64_t SendspinTimeFilter::compute_server_time(int64_t client_time) const {
 
   std::lock_guard<std::mutex> lock(this->state_mutex_);
   const double dt = client_time - this->last_update_;
-
-  // Only apply drift compensation if statistically significant (SNR check)
-  // drift^2 > threshold^2 * drift_covariance avoids sqrt and abs operations
-  const double drift_squared = this->drift_ * this->drift_;
-  const bool use_drift = drift_squared > this->drift_significance_threshold_squared_ * this->drift_covariance_;
-  const double effective_drift = use_drift ? this->drift_ : 0.0;
+  const double effective_drift = this->use_drift_ ? this->drift_ : 0.0;
 
   const int64_t offset = std::round(this->offset_ + effective_drift * dt);
   return client_time + offset;
@@ -149,12 +149,7 @@ int64_t SendspinTimeFilter::compute_client_time(int64_t server_time) const {
   // T_client = (T_server - offset + drift * T_last_update) / (1 + drift)
 
   std::lock_guard<std::mutex> lock(this->state_mutex_);
-
-  // Only apply drift compensation if statistically significant (SNR check)
-  // drift^2 > threshold^2 * drift_covariance avoids sqrt and abs operations
-  const double drift_squared = this->drift_ * this->drift_;
-  const bool use_drift = drift_squared > this->drift_significance_threshold_squared_ * this->drift_covariance_;
-  const double effective_drift = use_drift ? this->drift_ : 0.0;
+  const double effective_drift = this->use_drift_ ? this->drift_ : 0.0;
 
   return std::round((static_cast<double>(server_time) - this->offset_ + effective_drift * this->last_update_) /
                     (1.0 + effective_drift));
@@ -169,6 +164,7 @@ void SendspinTimeFilter::reset() {
   this->offset_drift_covariance_ = 0.0;
   this->drift_covariance_ = 0.0;
   this->last_update_ = 0;
+  this->use_drift_ = false;
 }
 
 int64_t SendspinTimeFilter::get_error() const {
