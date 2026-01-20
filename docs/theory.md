@@ -1,6 +1,6 @@
 # Clock Synchronization with Kalman Filters and NTP-Style Time Messages
 
-The Sendspin time synchronization system uses an NTP-style time message exchange combined with a two-dimensional Kalman filter to maintain accurate client-server timestamp synchronization. The system not only computes the offset between client and server clocks but also tracks and compensates for clock drift, using microsecond-level precision. We start, in Section 1, with a description of the NTP-style time messages. Then, we describe the two-dimensional Kalman filter in Section 2. Next, we show how the filter's state updates with new messages and describes how it uses an adaptive forgetting factor to quickly adapt when the client clock is drastically inaccurate due to external conditions. In section 4, we give formulas for converting timestamps between the two time domains.
+The Sendspin time synchronization system uses an NTP-style time message exchange combined with a two-dimensional Kalman filter to maintain accurate client-server timestamp synchronization. The system not only computes the offset between client and server clocks but also tracks and compensates for clock drift, using microsecond-level precision. We start, in Section 1, with a description of the NTP-style time messages. Then, we describe the two-dimensional Kalman filter in Section 2. Next, we show how the filter's state updates with new messages and describes how it uses an adaptive forgetting factor to quickly adapt when the client clock is drastically inaccurate due to external conditions. In Section 4, we give formulas for converting timestamps between the two time domains and describe the drift significance check that prevents noisy drift estimates from degrading conversion accuracy.
 ## 1. NTP-Style Time Message Exchange Protocol
 
 ### 1.1 Message Exchange Flow
@@ -229,6 +229,42 @@ Solving for $`T_{\text{client}}`$:
 T_{\text{client}} = \frac{T_{\text{server}} - \text{offset} + \text{drift} \cdot T_{\text{last\_update}}}{1 + \text{drift}}
 ```
 
+### 4.3 Drift Significance Check
+
+Early in the synchronization process, the drift estimate has high uncertainty. After only two measurements, the drift is computed via finite differences:
+
+```math
+\text{drift}_1 = \frac{z_1 - \text{offset}_0}{\Delta t}
+```
+
+with covariance:
+
+```math
+\sigma^2_{\text{drift},1} = \frac{\sigma^2_{\text{offset},0} + \sigma^2_{\text{measurement},1}}{(\Delta t)^2}
+```
+
+This initial drift estimate may have uncertainty far exceeding its magnitude. Applying such an uncertain correction could introduce more error than it removes.
+
+To address this, the time conversion functions apply a signal-to-noise ratio (SNR) check before using drift compensation. Drift is only applied when the estimate is statistically significant:
+
+```math
+|\text{drift}| > k \cdot \sigma_{\text{drift}}
+```
+
+where $k$ is a configurable significance threshold (default 2.0, corresponding to approximately 95% confidence).
+
+When the drift estimate fails this significance test, the conversion functions use only the offset:
+
+```math
+T_{\text{server}} = T_{\text{client}} + \text{offset}
+```
+
+```math
+T_{\text{client}} = T_{\text{server}} - \text{offset}
+```
+
+This mechanism prevents noisy drift estimates from degrading accuracy during initial synchronization.
+
 ## Conclusion
 
-This implementation uses NTP-style time messages and Kalman filtering to accurately synchronize a client's clock. The two-dimensional offset and drift state provides better long-term accuracy compared to offset-only approaches, while the adaptive forgetting factor ensures robustness to underlying clock rate changes.
+Tracking both offset and drift improves long-term accuracy over offset-only approaches. The adaptive forgetting factor allows recovery from clock adjustments, and the drift significance check avoids applying noisy corrections during initial synchronization.
