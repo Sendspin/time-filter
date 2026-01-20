@@ -104,6 +104,7 @@ class SendspinTimeFilter {
  protected:
   int64_t last_update_;
   uint8_t count_;
+  const uint8_t min_samples_for_forgetting_;
 
   double offset_;
   double drift_;
@@ -116,7 +117,6 @@ class SendspinTimeFilter {
   const double drift_process_variance_;
   const double forget_variance_factor_;
   const double adaptive_forgetting_cutoff_;
-  const uint8_t min_samples_for_forgetting_;
   const double drift_significance_threshold_squared_;
 
   mutable std::mutex state_mutex_;
