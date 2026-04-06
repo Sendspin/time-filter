@@ -27,7 +27,7 @@ This formula derives from the fundamental equations:
 T_2 = T_1 + \text{offset} + \text{forward\_delay}
 ```
 ```math
-T_4 = T_3 + \text{offset} - \text{backward\_delay}
+T_4 = T_3 - \text{offset} + \text{backward\_delay}
 ```
 
 Assuming symmetric delays (forward_delay ≈ backward_delay), solving these equations yields the offset formula.
