@@ -44,6 +44,14 @@ Assuming symmetric delays (forward_delay ≈ backward_delay), solving these equa
 
 The delay represents the total network round-trip time minus the server processing time. The maximum error is half this delay, representing the worst-case uncertainty when network delays are asymmetric.
 
+Because $`\text{max\_error}`$ is a worst-case bound rather than a 1σ estimate, the filter scales it by a configurable factor $`\alpha \in (0, 1]`$ before using it as the measurement standard deviation:
+
+```math
+\sigma_{\text{measurement}} = \alpha \cdot \text{max\_error}
+```
+
+Using $`\text{max\_error}`$ unscaled would inflate the measurement variance and slow convergence by under-weighting new measurements.
+
 ## 2. Kalman Filter Architecture
 
 ### 2.1 State Variables
