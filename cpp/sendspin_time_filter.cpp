@@ -19,15 +19,16 @@
 #include <limits>
 #include <mutex>
 
-SendspinTimeFilter::SendspinTimeFilter(double process_std_dev, double drift_process_std_dev, double forget_factor,
-                                       double adaptive_cutoff, uint8_t min_samples,
-                                       double drift_significance_threshold)
-    : process_variance_(process_std_dev * process_std_dev),
-      drift_process_variance_(drift_process_std_dev * drift_process_std_dev),
-      forget_variance_factor_(forget_factor * forget_factor),
-      adaptive_forgetting_cutoff_(adaptive_cutoff),
-      min_samples_for_forgetting_(min_samples),
-      drift_significance_threshold_squared_(drift_significance_threshold * drift_significance_threshold) {
+SendspinTimeFilter::SendspinTimeFilter() : SendspinTimeFilter(Config{}) {}
+
+SendspinTimeFilter::SendspinTimeFilter(const Config &config)
+    : process_variance_(config.process_std_dev * config.process_std_dev),
+      drift_process_variance_(config.drift_process_std_dev * config.drift_process_std_dev),
+      forget_variance_factor_(config.forget_factor * config.forget_factor),
+      adaptive_forgetting_cutoff_(config.adaptive_cutoff),
+      min_samples_for_forgetting_(config.min_samples),
+      drift_significance_threshold_squared_(config.drift_significance_threshold * config.drift_significance_threshold),
+      max_error_scale_(config.max_error_scale) {
   this->reset();
 }
 
@@ -44,7 +45,7 @@ void SendspinTimeFilter::update(int64_t measurement, int64_t max_error, int64_t 
   const double dt_squared = dt * dt;
   this->last_update_ = time_added;
 
-  const double update_std_dev = max_error;
+  const double update_std_dev = max_error * this->max_error_scale_;
   const double measurement_variance = update_std_dev * update_std_dev;
 
   // Filter initialization: First measurement establishes offset baseline
