@@ -1,6 +1,7 @@
 # Clock Synchronization with Kalman Filters and NTP-Style Time Messages
 
 The Sendspin time synchronization system uses an NTP-style time message exchange combined with a two-dimensional Kalman filter to maintain accurate client-server timestamp synchronization. The system not only computes the offset between client and server clocks but also tracks and compensates for clock drift, using microsecond-level precision. We start, in Section 1, with a description of the NTP-style time messages. Then, we describe the two-dimensional Kalman filter in Section 2. Next, we show how the filter's state updates with new messages and describes how it uses an adaptive forgetting factor to quickly adapt when the client clock is drastically inaccurate due to external conditions. In Section 4, we give formulas for converting timestamps between the two time domains and describe the drift significance check that prevents noisy drift estimates from degrading conversion accuracy.
+
 ## 1. NTP-Style Time Message Exchange Protocol
 
 ### 1.1 Message Exchange Flow
@@ -23,9 +24,11 @@ The system computes:
 ```
 
 This formula derives from the fundamental equations:
+
 ```math
 T_2 = T_1 + \text{offset} + \text{forward\_delay}
 ```
+
 ```math
 T_4 = T_3 - \text{offset} + \text{backward\_delay}
 ```
@@ -63,6 +66,7 @@ The Kalman filter tracks a two-dimensional state vector:
 ```
 
 Where:
+
 - **offset**: The current timestamp offset between client and server
 - **drift**: The rate of change of the offset (clock drift rate)
 
@@ -78,6 +82,7 @@ The system maintains a 2×2 covariance matrix:
 ```
 
 Where:
+
 - $`\sigma^2_{\text{offset}}`$: Variance of the offset estimate
 - $`\sigma^2_{\text{drift}}`$: Variance of the drift estimate
 - $`\sigma_{\text{offset,drift}}`$: Covariance between offset and drift
@@ -87,11 +92,13 @@ Where:
 ### 3.1 Initialization Phase
 
 **First Update (count = 0):**
+
 - Sets initial offset directly from measurement: $`\text{offset}_0 = z_0`$
 - Initializes offset covariance from measurement variance: $`\sigma^2_{\text{offset},0} = \sigma^2_{\text{measurement}}`$
 - Sets drift to zero: $`\text{drift}_0 = 0`$
 
 **Second Update (count = 1):**
+
 - Computes initial drift:
   $`\text{drift}_1 = \frac{z_1 - \text{offset}_0}{\Delta t}`$
 - Estimates drift covariance:
@@ -112,6 +119,7 @@ Where the state transition matrix is:
 ```
 
 This yields:
+
 ```math
 \hat{\text{offset}}_{k|k-1} = \text{offset}_{k-1} + \text{drift}_{k-1} \cdot \Delta t
 ```
@@ -139,6 +147,7 @@ Expanding the matrix multiplication:
 ```
 
 The process noise includes two independent components:
+
 - $`q_{\text{offset}}\Delta t`$ accounts for clock jitter and short-term instabilities
 - $`q_{\text{drift}}\Delta t`$ accounts for clock frequency wander and long-term drift variations
 
