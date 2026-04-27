@@ -26,9 +26,9 @@ SendspinTimeFilter::SendspinTimeFilter(const Config &config)
       drift_process_variance_(config.drift_process_std_dev * config.drift_process_std_dev),
       forget_variance_factor_(config.forget_factor * config.forget_factor),
       adaptive_forgetting_cutoff_(config.adaptive_cutoff),
-      min_samples_for_forgetting_(config.min_samples),
       drift_significance_threshold_squared_(config.drift_significance_threshold * config.drift_significance_threshold),
-      max_error_scale_(config.max_error_scale) {
+      max_error_scale_(config.max_error_scale),
+      min_samples_for_forgetting_(config.min_samples) {
   this->reset();
 }
 
