@@ -43,8 +43,8 @@ class SendspinTimeFilter {
     /// Forgetting factor (>1) applied to covariances when large residuals are detected.
     /// Higher values enable faster recovery from disruptions but may reduce stability.
     double forget_factor = 2.0;
-    /// Fraction of max_error that triggers adaptive forgetting.
-    /// When residual > adaptive_cutoff * max_error, forgetting is applied.
+    /// Multiple of max_error that triggers adaptive forgetting.
+    /// When residual > adaptive_cutoff * max_error, forgetting is applied; values > 1 require larger residuals.
     double adaptive_cutoff = 3.0;
     /// Minimum number of samples before adaptive forgetting is enabled.
     /// Building sufficient history before enabling forgetting improves stability.

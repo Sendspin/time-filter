@@ -19,20 +19,24 @@ This library implements a reference two-dimensional Kalman filter that tracks cl
 ## Core API
 
 ```cpp
-// Configuration struct (all fields have defaults)
-struct Config {
-  double process_std_dev = 0.0;            // Offset random-walk diffusion (µs / sqrt(µs))
-  double drift_process_std_dev = 1e-11;    // Drift random-walk diffusion (1 / sqrt(µs); drift itself is dimensionless)
-  double forget_factor = 2.0;              // Forgetting factor (>1) for recovery from disruptions
-  double adaptive_cutoff = 3.0;            // Multiple of max_error that triggers forgetting
-  uint8_t min_samples = 100;               // Minimum samples before adaptive forgetting
-  double drift_significance_threshold = 2.0;  // SNR threshold for drift compensation
-  double max_error_scale = 0.5;            // Scale applied to max_error before Kalman update
-};
+class SendspinTimeFilter {
+ public:
+  // Configuration struct (all fields have defaults)
+  struct Config {
+    double process_std_dev = 0.0;            // Offset random-walk diffusion (µs / sqrt(µs))
+    double drift_process_std_dev = 1e-11;    // Drift random-walk diffusion (1 / sqrt(µs); drift itself is dimensionless)
+    double forget_factor = 2.0;              // Forgetting factor (>1) for recovery from disruptions
+    double adaptive_cutoff = 3.0;            // Multiple of max_error that triggers forgetting
+    uint8_t min_samples = 100;               // Minimum samples before adaptive forgetting
+    double drift_significance_threshold = 2.0;  // SNR threshold for drift compensation
+    double max_error_scale = 0.5;            // Scale applied to max_error before Kalman update
+  };
 
-// Constructor
-explicit SendspinTimeFilter(const Config &config);
-SendspinTimeFilter();  // Uses default Config
+  // Constructors
+  explicit SendspinTimeFilter(const Config &config);
+  SendspinTimeFilter();  // Uses default Config
+  // ...
+};
 
 // Update filter with computed offset and uncertainty from NTP exchange
 // measurement: ((T2-T1)+(T3-T4))/2 in microseconds
