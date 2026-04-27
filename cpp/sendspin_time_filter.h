@@ -31,23 +31,38 @@
 /// Thread-safe access to the current time transformation is provided via std::mutex.
 class SendspinTimeFilter {
  public:
+  /// @brief Configuration parameters for the time synchronization filter.
+  struct Config {
+    /// Diffusion coefficient for offset random walk, in µs / sqrt(µs), modeling clock jitter.
+    /// Offset variance grows by process_std_dev² * dt per µs of elapsed time.
+    double process_std_dev = 0.0;
+    /// Diffusion coefficient for drift random walk, in 1 / sqrt(µs), modeling frequency wander.
+    /// Drift is dimensionless (µs of offset per µs of time), so its variance grows by
+    /// drift_process_std_dev² * dt per µs of elapsed time.
+    double drift_process_std_dev = 1e-11;
+    /// Forgetting factor (>1) applied to covariances when large residuals are detected.
+    /// Higher values enable faster recovery from disruptions but may reduce stability.
+    double forget_factor = 2.0;
+    /// Multiple of max_error that triggers adaptive forgetting.
+    /// When residual > adaptive_cutoff * max_error, forgetting is applied; values > 1 require larger residuals.
+    double adaptive_cutoff = 3.0;
+    /// Minimum number of samples before adaptive forgetting is enabled.
+    /// Building sufficient history before enabling forgetting improves stability.
+    uint8_t min_samples = 100;
+    /// SNR threshold for applying drift compensation in time conversions.
+    /// Drift is only used when drift² > threshold² * drift_covariance, ensuring
+    /// the drift estimate is statistically significant before applying corrections.
+    double drift_significance_threshold = 2.0;
+    /// Scale factor applied to max_error before it is used as the measurement standard deviation.
+    /// Values < 1 indicate the round-trip half-delay overestimates true measurement noise.
+    double max_error_scale = 0.5;
+  };
+
   /// @brief Constructs a Kalman filter for time synchronization.
   ///
-  /// @param process_std_dev Standard deviation of the offset process noise in microseconds, modeling clock jitter.
-  /// @param drift_process_std_dev Standard deviation of the drift process noise in microseconds/second, modeling
-  ///                              frequency wander.
-  /// @param forget_factor Forgetting factor (>1) applied to covariances when large residuals are detected.
-  ///                      Higher values enable faster recovery from disruptions but may reduce stability.
-  /// @param adaptive_cutoff Fraction of max_error (0-1) that triggers adaptive forgetting. Default 0.75.
-  ///                        When residual > adaptive_cutoff * max_error, forgetting is applied.
-  /// @param min_samples Minimum number of samples before adaptive forgetting is enabled. Default 100.
-  ///                    Building sufficient history before enabling forgetting improves stability.
-  /// @param drift_significance_threshold SNR threshold for applying drift compensation in time conversions. Default 2.0.
-  ///                                     Drift is only used when drift² > threshold² * drift_covariance, ensuring
-  ///                                     the drift estimate is statistically significant before applying corrections.
-  SendspinTimeFilter(double process_std_dev, double drift_process_std_dev, double forget_factor,
-                     double adaptive_cutoff = 0.75, uint8_t min_samples = 100,
-                     double drift_significance_threshold = 2.0);
+  /// @param config Filter configuration parameters. See Config for field documentation and defaults.
+  explicit SendspinTimeFilter(const Config &config);
+  SendspinTimeFilter();
 
   /// @brief Processes a new time synchronization measurement through the Kalman filter.
   ///
@@ -116,6 +131,7 @@ class SendspinTimeFilter {
   const double forget_variance_factor_;
   const double adaptive_forgetting_cutoff_;
   const double drift_significance_threshold_squared_;
+  const double max_error_scale_;
 
   mutable std::mutex state_mutex_;
 

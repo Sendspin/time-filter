@@ -19,15 +19,24 @@ This library implements a reference two-dimensional Kalman filter that tracks cl
 ## Core API
 
 ```cpp
-// Constructor
-// process_std_dev: Standard deviation of offset process noise in microseconds
-// drift_process_std_dev: Standard deviation of drift process noise in µs/s
-// forget_factor: Forgetting factor (>1) for recovery from disruptions
-// adaptive_cutoff: Fraction of max_error (0-1) that triggers forgetting (default: 0.75)
-// min_samples: Minimum samples before adaptive forgetting (default: 100)
-SendspinTimeFilter(double process_std_dev, double drift_process_std_dev,
-                   double forget_factor, double adaptive_cutoff = 0.75,
-                   uint8_t min_samples = 100);
+class SendspinTimeFilter {
+ public:
+  // Configuration struct (all fields have defaults)
+  struct Config {
+    double process_std_dev = 0.0;            // Offset random-walk diffusion (µs / sqrt(µs))
+    double drift_process_std_dev = 1e-11;    // Drift random-walk diffusion (1 / sqrt(µs); drift itself is dimensionless)
+    double forget_factor = 2.0;              // Forgetting factor (>1) for recovery from disruptions
+    double adaptive_cutoff = 3.0;            // Multiple of max_error that triggers forgetting
+    uint8_t min_samples = 100;               // Minimum samples before adaptive forgetting
+    double drift_significance_threshold = 2.0;  // SNR threshold for drift compensation
+    double max_error_scale = 0.5;            // Scale applied to max_error before Kalman update
+  };
+
+  // Constructors
+  explicit SendspinTimeFilter(const Config &config);
+  SendspinTimeFilter();  // Uses default Config
+  // ...
+};
 
 // Update filter with computed offset and uncertainty from NTP exchange
 // measurement: ((T2-T1)+(T3-T4))/2 in microseconds
@@ -45,19 +54,18 @@ int64_t get_error() const;
 
 ## Recommended Values
 
-Based on preliminary experiments, the following constructor parameters provide good synchronization performance:
+The default `Config` values are based on preliminary experiments and provide good synchronization performance for typical network conditions:
 
 ```cpp
-SendspinTimeFilter filter(
-    0.01,    // process_std_dev: 0.01 µs offset noise
-    0.0,     // drift_process_std_dev: 0.0 µs/s drift noise
-    1.001    // forget_factor: 1.001 for adaptive forgetting
-    // adaptive_cutoff: 0.75 (use default)
-    // min_samples: 100 (use default)
-);
+SendspinTimeFilter filter;  // Uses default Config
+
+// Or override specific fields:
+SendspinTimeFilter::Config config;
+config.forget_factor = 1.5;
+SendspinTimeFilter filter(config);
 ```
 
-These values balance tracking responsiveness with stability for typical network conditions.
+The defaults balance tracking responsiveness with stability for typical network conditions.
 
 ## Documentation
 
