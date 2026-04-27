@@ -54,7 +54,7 @@ int64_t get_error() const;
 
 ## Recommended Usage
 
-Best results come from a **bursting strategy** at the call site (outside the library). Send a small burst of NTP-style exchanges sequentially; e.g., 8 messages back-to-back, each waiting for its reply, every ~10 seconds, then call `update()` with the sample that has the lowest `max_error`. Sendspin typically runs over an ordered TCP/WebSocket transport, so a delayed earlier message will also delay later ones in the burst, making the individual measurement delays not independent.
+Best results come from a **burst strategy** at the call site (outside the library). Send a small burst of NTP-style exchanges sequentially; e.g., 8 messages back-to-back, each waiting for its reply, every ~10 seconds, then call `update()` with the sample that has the lowest `max_error`. Sendspin typically runs over an ordered TCP/WebSocket transport, so a delayed earlier message will also delay later ones in the burst, making the individual measurement delays not independent.
 
 This approach speeds up convergence and gives better overall synchronization accuracy.
 
