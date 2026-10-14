@@ -42,6 +42,12 @@ void SendspinTimeFilter::update(int64_t measurement, int64_t max_error, int64_t 
         return;
     }
 
+    if (max_error <= 0) {
+        // Skip nonsensical uncertainties: a zero max_error would collapse the measurement variance
+        // (and the forgetting cutoff) to zero, and a negative one is not a valid half-RTT
+        return;
+    }
+
     const double dt = time_added - this->last_update_;
     const double dt_squared = dt * dt;
     this->last_update_ = time_added;
