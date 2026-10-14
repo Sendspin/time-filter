@@ -40,8 +40,9 @@ class SendspinTimeFilter {
 
 // Update filter with computed offset and uncertainty from NTP exchange
 // measurement: ((T2-T1)+(T3-T4))/2 in microseconds
-// max_error: ((T4-T1)-(T3-T2))/2 in microseconds
-// time_added: Client timestamp when measurement was taken in microseconds
+// max_error: ((T4-T1)-(T3-T2))/2 in microseconds; must be > 0
+// time_added: Client timestamp when measurement was taken in microseconds; must increase
+// Samples violating either requirement are ignored and leave the filter state unchanged
 void update(int64_t measurement, int64_t max_error, int64_t time_added);
 
 // Convert between client and server timestamps

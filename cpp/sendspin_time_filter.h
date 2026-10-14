@@ -79,9 +79,10 @@ public:
     /// @param measurement Computed offset from NTP-style exchange: ((T2-T1)+(T3-T4))/2 in
     /// microseconds.
     /// @param max_error Half the round-trip delay: ((T4-T1)-(T3-T2))/2, representing maximum
-    /// measurement uncertainty in
-    ///                  microseconds.
-    /// @param time_added Client timestamp when this measurement was taken in microseconds.
+    /// measurement uncertainty in microseconds. Must be positive; samples with max_error <= 0 are
+    /// ignored.
+    /// @param time_added Client timestamp when this measurement was taken in microseconds. Samples
+    /// not strictly later than the previous accepted sample are ignored.
     void update(int64_t measurement, int64_t max_error, int64_t time_added);
 
     /// @brief Converts a client timestamp to the equivalent server timestamp.
